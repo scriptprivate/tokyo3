@@ -1,7 +1,7 @@
 .data
-array_size: .word 5        # Number of elements in the array
-array:      .space 20      # Allocate space for 5 integers (4 bytes each)
-newline:    .asciiz "\n"   # Newline character
+array_size: .word 5       # Number of elements in the array
+array:      .space 20     # Allocate space for 5 integers (4 bytes each)
+newline:    .asciiz "\n"  # Newline character
 
 .text
 .globl main
@@ -24,14 +24,15 @@ process_input_data:
     la $s0, array        # Load base address of array into $s0
     lw $s1, array_size   # Load array size into $s1
     li $t0, 0            # i = 0
+    sll $s2, $s1, 2      # Convert size to bytes (size * 4)
 
 process_input_loop:
-    bge $t0, $s1, process_input_done    # Exit loop if i >= size
+    bge $t0, $s2, process_input_done    # Exit loop if i >= size in bytes
     li $v0, 5                           # Syscall: Read integer
     syscall
     add $t1, $s0, $t0                   # Calculate address: base + offset
     sw $v0, ($t1)                       # Store input into array[i]
-    addi $t0, $t0, 4                    # i++
+    addi $t0, $t0, 4                    # i++ (in bytes)
     j process_input_loop
 
 process_input_done:
@@ -42,27 +43,28 @@ process_input_done:
 # Sorts the array using Selection Sort
 ###############################
 process_sort_data:
-    li $t0, 0                                # i = 0 (outer loop counter)
+    li $t0, 0           # i = 0 (outer loop counter)
+    sll $s2, $s1, 2     # Convert size to bytes (size * 4)
 
 process_sort_outer_loop:
-    bge $t0, $s1, process_sort_done          # Exit outer loop if i >= size
-    move $t1, $t0                            # min_index = i
-    addi $t2, $t0, 4                         # j = i + 1 (inner loop counter)
+    bge $t0, $s2, process_sort_done    # Exit outer loop if i >= size in bytes
+    move $t1, $t0                      # min_index = i
+    addi $t2, $t0, 4                   # j = i + 1 (inner loop counter)
 
 process_sort_find_min_loop:
-    bge $t2, $s1, process_sort_swap          # Exit inner loop if j >= size
-    add $t7, $s0, $t2                        # Calculate address for array[j]
-    lw $t3, ($t7)                            # Load array[j] into $t3
-    add $t7, $s0, $t1                        # Calculate address for array[min_index]
-    lw $t4, ($t7)                            # Load array[min_index] into $t4
-    blt $t3, $t4, process_sort_update_min    # If array[j] < array[min_index], update min_index
+    bge $t2, $s2, process_sort_swap        # Exit inner loop if j >= size in bytes
+    add $t7, $s0, $t2                      # Calculate address for array[j]
+    lw $t3, ($t7)                          # Load array[j] into $t3
+    add $t7, $s0, $t1                      # Calculate address for array[min_index]
+    lw $t4, ($t7)                          # Load array[min_index] into $t4
+    blt $t3, $t4, process_sort_update_min  # If array[j] < array[min_index], update min_index
     j process_sort_skip_update
 
 process_sort_update_min:
     move $t1, $t2       # min_index = j
 
 process_sort_skip_update:
-    addi $t2, $t2, 4    # j++
+    addi $t2, $t2, 4    # j++ (in bytes)
     j process_sort_find_min_loop
 
 process_sort_swap:
@@ -77,11 +79,11 @@ process_sort_swap:
     sw $t5, ($t7)                           # array[min_index] = temp
 
 process_sort_next_iter:
-    addi $t0, $t0, 4    # i++
+    addi $t0, $t0, 4    # i++ (in bytes)
     j process_sort_outer_loop
 
 process_sort_done:
-    jr $ra                                  # Return to caller
+    jr $ra              # Return to caller
 
 ###############################
 # Process: Output Data
@@ -91,17 +93,18 @@ process_output_data:
     la $s0, array        # Load base address of array
     lw $s1, array_size   # Load array size
     li $t0, 0            # i = 0
+    sll $s2, $s1, 2      # Convert size to bytes (size * 4)
 
 process_output_loop:
-    bge $t0, $s1, process_output_done    # Exit loop if i >= size
-    add $t1, $s0, $t0                    # Calculate address for array[i]
-    lw $a0, ($t1)                        # Load array[i] into $a0
-    li $v0, 1                            # Syscall: Print integer
+    bge $t0, $s2, process_output_done   # Exit loop if i >= size in bytes
+    add $t1, $s0, $t0                   # Calculate address for array[i]
+    lw $a0, ($t1)                       # Load array[i] into $a0
+    li $v0, 1                           # Syscall: Print integer
     syscall
-    li $v0, 4                            # Syscall: Print newline
+    li $v0, 4                           # Syscall: Print newline
     la $a0, newline
     syscall
-    addi $t0, $t0, 4    # i++
+    addi $t0, $t0, 4                    # i++ (in bytes)
     j process_output_loop
 
 process_output_done:
